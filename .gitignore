@@ -1,0 +1,19 @@
+# Build output
+/adsm
+/adsm_cli
+/dist/
+
+# Go
+*.test
+*.out
+
+# Local config / credentials — never commit
+.env
+.env.*
+*.pem
+*.key
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
