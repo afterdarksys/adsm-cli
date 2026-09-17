@@ -42,6 +42,10 @@ type Config struct {
 	// display only ("logged in as ..."). It is not proof of authentication.
 	Account string `yaml:"account,omitempty"`
 
+	// OrganizationID is the explicitly selected canonical tenant. It is an
+	// identifier, never an email-derived tenancy key.
+	OrganizationID string `yaml:"organization_id,omitempty"`
+
 	// Output is the default output format when -o is not supplied.
 	Output string `yaml:"output,omitempty"`
 }

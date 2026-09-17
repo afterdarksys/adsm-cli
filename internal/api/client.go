@@ -28,7 +28,8 @@ type Client struct {
 	// tokenFn supplies the bearer token per request rather than holding it on
 	// the struct, so a refreshed token is picked up without rebuilding the
 	// client — and so a token is never accidentally logged with the Client.
-	tokenFn func(context.Context) (string, error)
+	tokenFn        func(context.Context) (string, error)
+	OrganizationID string
 }
 
 // Option configures a Client.
@@ -43,6 +44,7 @@ func WithHTTPClient(h *http.Client) Option {
 func WithTokenFunc(fn func(context.Context) (string, error)) Option {
 	return func(c *Client) { c.tokenFn = fn }
 }
+func WithOrganization(id string) Option { return func(c *Client) { c.OrganizationID = id } }
 
 // New builds a Client for the given base URL.
 func New(baseURL string, opts ...Option) *Client {
@@ -86,6 +88,12 @@ func (e *Error) Error() string {
 //
 // body may be nil. out may be nil for calls with no response payload.
 func (c *Client) Do(ctx context.Context, method, path string, body, out any) error {
+	return c.DoHeaders(ctx, method, path, body, out, nil)
+}
+
+// DoHeaders adds operation-specific headers such as Idempotency-Key and
+// If-Match while retaining the common auth and organization contract.
+func (c *Client) DoHeaders(ctx context.Context, method, path string, body, out any, headers http.Header) error {
 	var rdr io.Reader
 	if body != nil {
 		buf, err := json.Marshal(body)
@@ -103,6 +111,14 @@ func (c *Client) Do(ctx context.Context, method, path string, body, out any) err
 
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", UserAgent)
+	if c.OrganizationID != "" {
+		req.Header.Set("X-Organization-ID", c.OrganizationID)
+	}
+	for key, values := range headers {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

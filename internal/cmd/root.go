@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 
+	clientapi "github.com/afterdarksys/adsm/internal/api"
+	"github.com/afterdarksys/adsm/internal/auth"
 	"github.com/afterdarksys/adsm/internal/config"
 	"github.com/afterdarksys/adsm/internal/output"
 )
@@ -121,4 +124,12 @@ func Execute() {
 // half-built CLIs end up silently wired into automation.
 func notImplemented(name string) error {
 	return fmt.Errorf("'adsm %s' is not implemented yet", name)
+}
+
+func oauthConfig() auth.OAuth {
+	return auth.OAuth{AuthorizationURL: "https://login.afterdarksys.com/oauth/authorize", TokenURL: "https://login.afterdarksys.com/oauth/token", RevokeURL: "https://login.afterdarksys.com/oauth/revoke", ClientID: "adsm-cli", Audience: "api.afterdarksys.com"}
+}
+func apiClient() *clientapi.Client {
+	manager := &auth.TokenManager{Store: auth.NewKeyring(), OAuth: oauthConfig(), Profile: cfg.Profile}
+	return clientapi.New(cfg.APIURL, clientapi.WithOrganization(cfg.OrganizationID), clientapi.WithTokenFunc(func(ctx context.Context) (string, error) { return manager.Token(ctx) }))
 }
